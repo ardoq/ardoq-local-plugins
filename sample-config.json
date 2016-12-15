@@ -1,0 +1,7 @@
+{
+  "api": "https://app.ardoq.com/api/",
+  "apiToken": "YOUR-API-TOKEN",
+  "org": "YOUR-ORG-KEY",
+  "pluginPath": "plugin.js",
+  "pluginData": "plugin.json"
+}

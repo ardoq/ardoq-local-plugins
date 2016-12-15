@@ -1,0 +1,4 @@
+node_modules
+config.json
+plugin.json
+.DS_STORE
