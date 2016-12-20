@@ -12,7 +12,7 @@ A utility for developing plugins locally by syncing your updates with the Ardoq 
 2. Create a local version of the plugin, i.e. "plugin.js"
 
 3. Create a config file "config.json":
-```json
+```javascript
 {
   "api": "https://app.ardoq.com/api/",
   "apiToken": "YOUR-API-TOKEN", // Your API token (created in your Ardoq account settings)

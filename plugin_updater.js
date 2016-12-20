@@ -72,6 +72,7 @@ class PluginUpdater {
           });
         } else {
           console.warn('Couldn\'t get existing plugins', response.statusCode);
+          process.exit();
         }
       });
   }
@@ -108,40 +109,48 @@ class PluginUpdater {
                   fs.writeFile(that.pluginPath, remotePluginData.script, 'utf8');
                   console.log('Overwrote local with remote version.');
                 }
+                that.mergePluginData(remotePluginData);
               });
+            } else {
+              that.mergePluginData(remotePluginData);
             }
           } catch (e) {
             console.log('Created ' + that.pluginPath + ' from remote.');
             fs.writeFile(that.pluginPath, remotePluginData.script, 'utf8');
+            that.mergePluginData(remotePluginData);
           }
-
-          var mergedPluginData = {},
-            changes = 0;
-          _.each(remotePluginData, function (remoteVal, key) {
-            if (API_GENERATED_FIELDS.indexOf(key) !== -1) {
-              return;
-            } else if (!that.pluginData[key]) {
-              mergedPluginData[key] = remoteVal;
-            } else if (that.pluginData[key] !== remoteVal) {
-              changes++;
-              mergedPluginData[key] = remoteVal;
-            } else {
-              mergedPluginData[key] = remoteVal;
-            }
-          });
-          that.pluginData = mergedPluginData;
-          that.writeLocalPluginData();
-          console.log('Synced local plugin data from remote:');
-          if (changes === 0) {
-            console.log('All up-to-date.')
-          } else {
-            console.log('Forced updates to ' + that.pluginDataPath);
-          }
-          console.log('Waiting for changes...');
         } else {
           console.warn('Couldn\'t get remote plugin', response.statusCode);
+          process.exit();
         }
       });
+  }
+
+  mergePluginData (remotePluginData) {
+    var mergedPluginData = {},
+      that = this,
+      changes = 0;
+    _.each(remotePluginData, function (remoteVal, key) {
+      if (API_GENERATED_FIELDS.indexOf(key) !== -1) {
+        return;
+      } else if (!that.pluginData[key]) {
+        mergedPluginData[key] = remoteVal;
+      } else if (that.pluginData[key] !== remoteVal) {
+        changes++;
+        mergedPluginData[key] = remoteVal;
+      } else {
+        mergedPluginData[key] = remoteVal;
+      }
+    });
+    this.pluginData = mergedPluginData;
+    this.writeLocalPluginData();
+    console.log('Synced local plugin data from remote:');
+    if (changes === 0) {
+      console.log('All up-to-date.')
+    } else {
+      console.log('Forced updates to ' + this.pluginDataPath);
+    }
+    console.log('Waiting for changes...');
   }
 
   writeLocalPluginData () {
@@ -160,12 +169,14 @@ class PluginUpdater {
           console.log('Successfully updated the plugin.');
           that.pluginData._version += 1;
           that.writeLocalPluginData();
+          console.log('Waiting for changes...');
         } else if (response.statusCode === 409) {
-          console.warn('Local version differs from remote version', response.statusCode);
+          console.warn('Local version differs from remote version, trying to merge...');
+          that.updatePluginData();
         } else {
           console.warn('Couldn\'t update the plugin', response.statusCode);
+          process.exit();
         }
-        console.log('Waiting for changes...');
       });
   }
 }
