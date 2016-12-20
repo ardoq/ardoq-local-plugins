@@ -84,28 +84,35 @@ class PluginUpdater {
       .end(function (response) {
         if (response.statusCode === 200) {
           var remotePluginData = response.body;
-          var localPlugin = fs.readFileSync(that.pluginPath).toString('utf8');
+          try {
+            var localPlugin = fs.readFileSync(that.pluginPath).toString('utf8');
 
-          if (remotePluginData.script !== localPlugin) {
-            var backupPath = cwd + '/backup-';
-            console.warn('Warning: Local plugin code differs from the remote version!');
-            inquirer.prompt([{
-              type: 'rawlist',
-              name: 'overwriteChoice',
-              message: '-- Choose which file to keep (other will be backed up) --',
-              choices: ['Remote', 'Local']
-            }]).then(function (data) {
-              if (data.overwriteChoice === 'Local') {
-                backupPath += 'local-' + Date.now() + '.js';
-                fs.writeFile(backupPath, localPlugin, 'utf8');
-                fs.writeFile(that.pluginPath, remotePluginData.script, 'utf8');
-              } else {
-                backupPath += 'remote-' + Date.now() + '.js';
-                fs.writeFile(backupPath, remotePluginData.script, 'utf8');
-                // Overwrite to force a push
-                fs.writeFile(that.pluginPath, localPlugin, 'utf8');
-              }
-            });
+            if (remotePluginData.script !== localPlugin) {
+              var backupPath = cwd + '/backup-';
+              console.warn('Warning: Local plugin code differs from the remote version!');
+              inquirer.prompt([{
+                type: 'rawlist',
+                name: 'keepFile',
+                message: '-- Choose which file to keep (other will be backed up) --',
+                choices: ['Remote', 'Local']
+              }]).then(function (data) {
+                if (data.keepFile === 'Local') {
+                  console.log('Overwriting remote with local version...');
+                  backupPath += 'remote-' + Date.now() + '.js';
+                  fs.writeFile(backupPath, remotePluginData.script, 'utf8');
+                  // Overwrite to force a push
+                  fs.writeFile(that.pluginPath, localPlugin, 'utf8');
+                } else {
+                  backupPath += 'local-' + Date.now() + '.js';
+                  fs.writeFile(backupPath, localPlugin, 'utf8');
+                  fs.writeFile(that.pluginPath, remotePluginData.script, 'utf8');
+                  console.log('Overwrote local with remote version.');
+                }
+              });
+            }
+          } catch (e) {
+            console.log('Created ' + that.pluginPath + ' from remote.');
+            fs.writeFile(that.pluginPath, remotePluginData.script, 'utf8');
           }
 
           var mergedPluginData = {},
@@ -130,6 +137,7 @@ class PluginUpdater {
           } else {
             console.log('Forced updates to ' + that.pluginDataPath);
           }
+          console.log('Waiting for changes...');
         } else {
           console.warn('Couldn\'t get remote plugin', response.statusCode);
         }
@@ -157,6 +165,7 @@ class PluginUpdater {
         } else {
           console.warn('Couldn\'t update the plugin', response.statusCode);
         }
+        console.log('Waiting for changes...');
       });
   }
 }

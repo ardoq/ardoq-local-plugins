@@ -2,7 +2,8 @@
 'use strict';
 
 var PluginUpdater = require('./plugin_updater.js'),
-  fs = require('fs');
+  fs = require('fs'),
+  _ = require('lodash');
 
 var cwd = process.cwd(),
   config = require(cwd + '/config.json'),
@@ -13,6 +14,8 @@ var updater = new PluginUpdater(config);
 fs.watchFile(pluginPath, {
   interval: 2000
 }, (curr, prev) => {
-  console.log('Detected changes (' + pluginPath + ')');
-  updater.push();
+  if (!_.isEqual(curr, prev)) {
+    console.log('Detected changes (' + pluginPath + ')');
+    updater.push();
+  }
 });
